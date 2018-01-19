@@ -8,10 +8,11 @@ Require Import Mmx.binary.
 (* (* functions to encode decode instructions *) *)
 (* (* TODO :: Here this function can't be call for immediate *) *)
 (*=operand_to_bin *)
+
 Definition operand_to_bin (o : operande) : option (list bool) :=
   match o with
-    | imm_o (imm k) => n_bit 8 k
-    | reg_o (reg k) => n_bit 8 k
+  | imm_o (imm k) => n_bit 8 k
+  | reg_o (reg k) => n_bit 8 k
   end.
 (*=End *)
 (*=operand_to_bin_double *)

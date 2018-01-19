@@ -1,55 +1,100 @@
 Require Import List.
- 
-(*=tag_definition *)
-Inductive tag_duo :=
-| if_icmplt : tag_duo
-| goto : tag_duo.
+Require Import String.
 
+Inductive op_type :=
+| imm_t : op_type
+| reg_t : op_type.
 
-(* this is tag for instructions with the form (tag reg imm) *) 
-Inductive tag_uno :=
-(* floating point arithmetic *)
-| bipush : tag_uno
-| istore : tag_uno
-| iload : tag_uno.
+Scheme Equality for op_type.
 
-Inductive tag_zero :=
-  (* jumps with relative adress *)
-| iinc : tag_zero
-| ireturn : tag_zero.
+Inductive imediate :=
+| imm : nat -> imediate.
 
-(*=tag *)
-Inductive tag :=
-| tag_d : tag_duo -> tag
-| tag_u : tag_uno -> tag
-| tag_z : tag_zero -> tag.
-(*=End *)
+Inductive register :=
+| reg : nat -> register.
 
-Scheme Equality for tag.
+Inductive operande :=
+| imm_o : imediate -> operande
+| reg_o : register -> operande.
 
+Scheme Equality for operande.
 
-Lemma tag_beq_reflexivity : forall (t :tag), tag_beq t t = true.
+Inductive tag_op_types :=
+  | ts : list op_type -> tag_op_types.
+
+Fixpoint op_types_beq (l1 l2 : list op_type) :=
+match l1, l2 with
+        | h1::x1, h2::x2 => andb (op_type_beq h1 h2) (op_types_beq x1 x2)
+        | nil, nil => true
+        | _, _ => false
+end
+.
+
+Fixpoint tag_op_types_beq (t1 t2 : tag_op_types) :=
+  match t1, t2 with
+    ts l1, ts l2 => op_types_beq l1 l2
+  end
+.
+
+Inductive instr {T : Type} :=
+| cinstr : T -> tag_op_types -> instr.
+(* pour tester : créer l'ensemble des tags ici *)
+
+Variable tag : Type.
+Variable beq_T : tag -> tag -> bool.
+Variable beq_T_refl : forall (t : tag), beq_T t t = true.
+
+Definition instr_beq (T : Type) (i1 i2 : instr) :=
+  match i1,i2 with
+  | cinstr t1 tot1,cinstr t2 tot2 => andb (beq_T t1 t2)  (tag_op_types_beq tot1 tot2) 
+  end.
+
+Search (andb _ _ = true).
+
+Print instr_beq.
+Lemma op_type_beq_reflexivity: forall (o: op_type), op_type_beq o o = true.
 Proof.
-  destruct t ; destruct t ; reflexivity.
+  destruct o; auto.
 Qed.
+
+Lemma op_types_beq_reflexivity: forall (o: list op_type), op_types_beq o o = true.
+Proof.
+  intro.
+  induction o; try auto.
+  - simpl. rewrite op_type_beq_reflexivity. rewrite IHo. auto.
+Qed.
+
+Lemma tag_op_types_beq_reflexivity: forall (t: tag_op_types), tag_op_types_beq t t = true.
+Proof.
+  destruct t.
+  simpl.
+  rewrite op_types_beq_reflexivity.
+  reflexivity.
+Qed.
+
+Lemma instr_beq_reflexivity : forall (t : instr), instr_beq tag t t = true.
+Proof.
+  intro t.
+  destruct t. simpl. rewrite tag_op_types_beq_reflexivity. rewrite beq_T_refl.
+  auto.
+Qed.
+
+
+
 (*=tag_beq_different *)  
-Lemma tag_beq_different : forall (t1 t2 : tag),
-    tag_beq t1 t2 = true -> t1 = t2.
+Lemma instr_beq_different : forall (t1 t2 : instr),
+    instr_beq tag t1 t2 = true -> t1 = t2.
 (*=End *)
 Proof.
-  intros.
-  destruct t1;  destruct t; destruct t2; destruct t; try reflexivity; try discriminate.
+  intros. destruct t1. destruct t2. simpl in H. rewrite Bool.andb_true_iff in H. destruct H. rewrite tag_op_types_beq_reflexivity in H0.
+  
+  destruct t1; destruct t; destruct t2; destruct t; try reflexivity; try discriminate.
 Qed.
   
     
 
 (* maybe it's not usefull to distinguish the special register than the 
 other because the specification says that you have different numbers for them *)
-
-
-Inductive  operande :=
-  op : nat -> operande.
-
 
 (* instruction definition *)
 (*=instruction_tern_n *)
@@ -60,7 +105,7 @@ Record instruction_duo :=
 (*=End *)
 
 Record instruction_uno :=
-  mk_instr_u { instr_opcode_d : tag_duo; 
+  mk_instr_u { instr_opcode_d : tag_uno; 
              instr_operande1_d : operande }.
 
 Record instruction_zero :=
