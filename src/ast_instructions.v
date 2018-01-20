@@ -22,6 +22,9 @@ Scheme Equality for operande.
 Inductive tag_op_types :=
   | ts : list op_type -> tag_op_types.
 
+
+
+  
 Fixpoint op_types_beq (l1 l2 : list op_type) :=
 match l1, l2 with
         | h1::x1, h2::x2 => andb (op_type_beq h1 h2) (op_types_beq x1 x2)
@@ -72,6 +75,11 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma tag_op_types_beq_rev : forall (t1: tag_op_types) (t2: tag_op_types), tag_op_types_beq t1 t2 = true -> t1 = t2.
+Proof.
+  admit.
+Qed.
+
 Lemma instr_beq_reflexivity : forall (t : instr), instr_beq tag t t = true.
 Proof.
   intro t.
@@ -79,16 +87,26 @@ Proof.
   auto.
 Qed.
 
+Lemma beq_T_rev: forall (t1 t2 : tag), beq_T t1 t2 = true -> t1=t2.
+Proof.
+  intros.
+  admit.
+Qed.
+
+Lemma instr_rev: forall  (t1 t3 : tag)(t2 t4 : tag_op_types), instr_beq tag (cinstr t1 t2) (cinstr t3 t4)=true -> andb (beq_T t1 t3) (tag_op_types_beq t2 t4)=true.
+Proof.
+  admit.
+Qed.
 
 
 (*=tag_beq_different *)  
 Lemma instr_beq_different : forall (t1 t2 : instr),
-    instr_beq tag t1 t2 = true -> t1 = t2.
-(*=End *)
+    instr_beq tag t1 t2 = true -> t1=t2.
 Proof.
-  intros. destruct t1. destruct t2. simpl in H. rewrite Bool.andb_true_iff in H. destruct H. rewrite tag_op_types_beq_reflexivity in H0.
+  intros. destruct t1. destruct t2. simpl in H. rewrite Bool.andb_true_iff in H. destruct H. apply tag_op_types_beq_rev in H0.
+  rewrite H0. apply beq_T_rev in H.
+  rewrite H. 
   
-  destruct t1; destruct t; destruct t2; destruct t; try reflexivity; try discriminate.
 Qed.
   
     
