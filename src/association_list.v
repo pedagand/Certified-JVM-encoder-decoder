@@ -41,43 +41,12 @@ Fixpoint lookdown (n : nat) (l : tag_opcode_assoc) : option tag :=
 
 (* this table is an association list of type tag_opcode_assoc with every associations that can be made in our langage *)
 (*=encdec *)
-Definition encdec : tag_opcode_assoc := 
-[(tag_d(if_icmplt),161);
-(tag_d(goto),167);
-(tag_u(bipush),16);
-(tag_u(istore),54);
-(tag_u(iload),21);
-(tag_z(iinc),132);
-(tag_z(ireturn),172)
-].
-
+Variable encdec : tag_opcode_assoc.
 
 
 Require Import Bool.
 
 Print tag.
-
-Definition forall_tag_duo (p : tag_duo -> bool): bool :=
-(p if_icmplt) &&
-(p goto)
-.
-
-
-Definition forall_tag_uno (p : tag_uno -> bool): bool :=
-(p bipush) &&
-(p istore) &&
-(p iload).
-
-Definition forall_tag_zero (p: tag_zero -> bool): bool :=
-(p iinc) &&
-(p ireturn).
-
-(*=forall_tag *)
-Definition forall_tag (p : tag -> bool): bool :=
-  (forall_tag_duo (fun x => p (tag_d x))) &&
-  (forall_tag_uno (fun x => p (tag_u x))) &&
-  (forall_tag_zero (fun x => p (tag_z x))).
-(*=End *)
 
 Print reflect.
 
@@ -91,35 +60,10 @@ Proof.
 Qed.
 
 
-
-(*=helpBefore1 *)
-Lemma helpBefore1 : forall (f : tag -> bool), forall_tag f = true -> (forall (t: tag), f t = true).
-(*=End *)
-Proof.
-  intros f.
-  unfold forall_tag.
-  intros H.  
-  repeat (apply andb_prop in H; destruct H).
-  repeat (apply andb_prop in H2; destruct H2).
-  repeat (apply andb_prop in H1; destruct H1).
-  repeat (apply andb_prop in H0; destruct H0).     
-  destruct t; destruct t; auto.
-Qed.
-
-(*=helpBefore2 *)
-Lemma helpBefore2 : forall (f : tag -> bool), (forall (t: tag), f t = true) -> forall_tag f = true.
-(*=End *)
-Proof.
-  intros f H.
-  unfold forall_tag.
-  Search (_ && _ = true).
-  repeat (apply andb_true_intro ; split ; auto).
-Qed.
-
 (*=forall_tagP *)
 Lemma forall_tagP: forall (P : tag -> Prop)(f : tag -> bool),
     (forall (t : tag), reflect (P t) (f t)) ->
-    reflect (forall t, P t) (forall_tag f).
+    reflect (forall t, P t) (forall t, f t).
 (*=End *)
 Proof.
   intros P f H.
@@ -313,7 +257,7 @@ SearchAbout beq_nat.
 
 Definition eq_mtag (t1 t2: option tag): bool :=
   match t1,t2 with
-  | Some t1', Some t2' => tag_beq t1' t2'
+  | Some t1', Some t2' => beq_T t1' t2'
   | _,_ => false
   end.
 
@@ -350,16 +294,18 @@ Proof.
    +discriminate.
   -discriminate.
 Qed.
+
+Variable codemax:  nat.
   
 
 Definition lookdown_encdec : bool :=
-  forall_bounded 226 (fun n =>                     
-                      forall_tag (fun t => imply (eq_mtag (lookdown n encdec) (Some t))
-                                                 (eq_mnat (lookup t encdec) (Some n)))).
+  forall_bounded codemax (fun n =>                     
+                      forall (t:tag), imply (eq_mtag (lookdown n encdec) (Some t))
+                                                 (eq_mnat (lookup t encdec) (Some n))).
 (*=lookup_encdec *)
 Definition lookup_encdec : bool :=
-  forall_bounded 226 (fun n =>                     
-             forall_tag (fun t =>
+  forall_bounded codemax (fun n =>                     
+             forall (t:tag),
                 imply (eq_mnat (lookup t encdec) (Some n))
                       (eq_mtag (lookdown n encdec) (Some t)))).
 (*=End *)
@@ -372,7 +318,7 @@ Proof. vm_compute; reflexivity. Qed.
 
 (*=lookdown_encdecP *)
 Lemma lookdown_encdecP: 
-  reflect (forall (n : nat), n <= 226 ->
+  reflect (forall (n : nat), n <= codemax ->
             forall (t : tag),
               lookdown n encdec = Some t ->
               lookup t encdec = Some n)
@@ -430,13 +376,13 @@ Proof.
   intros n.
   Search (_ <= _ \/ _).
   Check Nat.le_gt_cases.
-  specialize (Nat.le_gt_cases n 226).
+  specialize (Nat.le_gt_cases n codemax).
   intros.
   destruct H1.
   -apply H0.
    exact H1.
    exact H2.
-  -assert (exists m, n = 227 + m)
+  -assert (exists m, n = codemax + m + 1)
       by (eexists; eapply le_plus_minus; eauto).
    destruct H3.
    subst n.
@@ -446,25 +392,24 @@ Qed.
 
 
 (* need to find how to refactor the proof *)
-Lemma lookup_val : forall (t : tag), forall (n : nat), lookup t encdec = Some n -> n <= 226.
+Lemma lookup_val : forall (t : tag), forall (n : nat), lookup t encdec = Some n -> n <= codemax.
 Proof.
   intros. 
   destruct t ; destruct t; simpl in H; inversion H; try (repeat (apply le_n_S)); apply Peano.le_0_n.
 Qed.
 
 Definition forall_inv (t: tag)(p: nat -> bool): bool :=
-  forall_tag (fun t => match lookup t encdec with
+                     match lookup t encdec with
                        | Some n => p n
                        | None => false end).
 
-Lemma lookup_true : forall_tag (fun t =>
-                       forall_inv t (fun n =>
-                         n <=? 256)) = true.
+Lemma lookup_true : forall( t:tag), forall_inv t (fun n =>
+                         n <=? codemax + 30)) = true.
 Proof. try (vm_compute; reflexivity). Qed.
 
 
 Theorem lookup_encdecP:
-  reflect (forall (n : nat), n <= 226 ->
+  reflect (forall (n : nat), n <= codemax ->
              forall (t : tag),
                lookup t encdec = Some n ->
                lookdown n encdec = Some t)

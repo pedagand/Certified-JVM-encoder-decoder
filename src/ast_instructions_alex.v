@@ -81,28 +81,6 @@ Qed.
 (* maybe it's not usefull to distinguish the special register than the 
 other because the specification says that you have different numbers for them *)
 
-(* instruction definition *)
-(*=instruction_tern_n *)
-Record instruction_duo :=
-  mk_instr_d { instr_opcode_t_n : tag_duo; 
-             instr_operande1_t : operande ; 
-             instr_operande2_t : operande }.
-(*=End *)
-
-Record instruction_uno :=
-  mk_instr_u { instr_opcode_d : tag_uno; 
-             instr_operande1_d : operande }.
-
-Record instruction_zero :=
-  mk_instr_z { instr_opcode_s : tag_zero }.
-
-
-
-(*=instruction *)
-Inductive instruction :=
-| instr_d : instruction_duo -> instruction
-| instr_u : instruction_uno -> instruction
-| instr_z : instruction_zero -> instruction.
 
 (*=End *)
 (*=binary_instruction  *)
