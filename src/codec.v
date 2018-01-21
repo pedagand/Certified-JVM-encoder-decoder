@@ -1,4 +1,10 @@
 Variable A B : Type.
+
+Lemma codec_none : forall (T: Type) (d: list bool -> (option T*list bool)),
+  d nil = (None, nil).
+Proof.
+  intros.
+  
   
 (* Simple encoder for unit *)
 Definition unitEncode (l: list bool) : (option unit*list bool) :=
@@ -19,6 +25,12 @@ Fixpoint crossDecode (l: list bool) (dA: list bool -> (option A*list bool)) (dB:
                | (b, l'') => (a,b,l'')
                end
   end.
+  
+Lemma crossDecode_empty : forall (dA: list bool -> (option A*list bool)) (dB: list bool -> (option B*list bool)),
+  crossDecode nil dA dB = (None, None, nil).
+Proof.
+  intros.
+  simpl.
   
 (* We want to prove the correctness of the cross decoding function *) 
 Lemma decode_composition : forall (l: list bool) (a: option A) (b: option B) (dA: list bool -> (option A*list bool)) (dB: list bool -> (option B*list bool)),

@@ -1,9 +1,10 @@
-Require Import List Nat Arith. 
+Require Import List Nat Arith String. 
 Import ListNotations.
 Require Import Mmx.ast_instructions.
 
+  
 (*=assoc *)
-Definition assoc : Set :=
+Definition assoc : Type :=
   tag * nat.
 (*=End *)
 (*=tag_opcode_assoc *)
@@ -14,16 +15,12 @@ Scheme Equality for list.
 Check list_beq.
 
 
-
-
-
-
 (* actually this is a good name for this function :p *)
 (*=lookup *)
 Fixpoint lookup (t : tag) (l : tag_opcode_assoc) : option nat :=
   match l with
     | [] => None
-    | (t',n) :: tl => if tag_beq t t'
+    | (t',n) :: tl => if beq_T t t'
                       then Some n
                       else lookup t tl
   end.
@@ -60,10 +57,14 @@ Proof.
 Qed.
 
 
+
+
+
+
 (*=forall_tagP *)
 Lemma forall_tagP: forall (P : tag -> Prop)(f : tag -> bool),
     (forall (t : tag), reflect (P t) (f t)) ->
-    reflect (forall t, P t) (forall t, f t).
+    reflect (forall t1, P t1) (forall t', f t').
 (*=End *)
 Proof.
   intros P f H.
@@ -257,7 +258,7 @@ SearchAbout beq_nat.
 
 Definition eq_mtag (t1 t2: option tag): bool :=
   match t1,t2 with
-  | Some t1', Some t2' => beq_T t1' t2'
+  | Some t1', Some t2' => tag_beq t1' t2'
   | _,_ => false
   end.
 

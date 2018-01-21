@@ -22,10 +22,43 @@ Inductive instruction {T : Type} :=
 | cinstr : T -> list op_type -> instruction.
 (* pour tester : créer l'ensemble des tags ici *)
 
+(* thoses are the type and lemmas that have to be implemented by the user *)
+(*
 Variable tag : Type.
 Variable beq_T : tag -> tag -> bool.
 Variable beq_T_refl : forall (t : tag), beq_T t t = true.
 Variable beq_T_rev : forall (t1 t2 : tag), beq_T t1 t2 = true <-> t1 = t2.
+ *)
+
+(* need an implementation to compile *)
+Inductive tag :=
+| bidon1 : tag
+| bidon2 : tag
+.
+
+Definition beq_T (t1 t2 : tag) : bool :=
+  match t1 with
+    | bidon1 => match t2 with
+                | bidon1 => true
+                | bidon2 => false
+                end
+    | bidon2 => match t2 with
+                | bidon1 => false
+                | bidon2 => true
+                end
+  end
+.
+
+Lemma beq_T_refl : forall (t : tag), beq_T t t = true.
+Proof.
+  intro. case t; simpl; auto.
+Qed.
+
+Lemma beq_T_rev : forall (t1 t2 : tag), beq_T t1 t2 = true <-> t1 = t2.
+Proof.
+  intros. case t1; case t2; split; try auto; try discriminate.
+Qed.
+(* end of dummy implementation *)
 
 Scheme Equality for list.
 
@@ -70,9 +103,7 @@ Proof.
   destruct t. simpl. rewrite list_op_type_beq_reflexivity. rewrite beq_T_refl.
   auto.
 Qed.
-
-Definition instruction_rev: forall  (t1 t3 : tag)(t2 t4 : list op_type), instruction_beq tag (cinstr t1 t2) (cinstr t3 t4)=true -> andb (beq_T t1 t3) (list_beq op_type op_type_beq t2 t4)=true.
-
+  
 (*=tag_beq_different *)  
 Lemma instruction_beq_different : forall (t1 t2 : instruction),
     instruction_beq tag t1 t2 = true -> t1=t2.
@@ -89,6 +120,5 @@ Definition binary_instruction := list bool.
 (* some example to test the record structure *)
 (* Example my_instr := mk_instr_t_i (tag_t_i ADD_I) (reg 10) (reg 11) (imm 12). *)
 
-(* Example first_field_instr := my_instr.(instr_opcode_t_i).  *)
-
+(* Example first_field_instr := my_instr.(instr_opcode_t_intro).  *)
 
