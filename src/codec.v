@@ -1,12 +1,16 @@
-Require Import ast_instructions.
-Require Import association_list.
-Require Import binary.
-  
 Variable A B : Type.
   
 (* Simple encoder for unit *)
-Definition unitEncode (l: list bool) : (unit*list bool) :=
-  (tt, l).
+Definition unitEncode (l: list bool) : (option unit*list bool) :=
+  (Some tt, l).
+  
+(* unitEncode cannot return None *)
+Lemma unitEncode_trivial : forall (l : list bool),
+  False -> unitEncode l = (None, l).
+Proof.
+  intros.
+  inversion H.
+Qed.
 
 (* Product decoding function in order to decode 2 kinds of data. eg: (Opcode * arguments) *)
 Fixpoint crossDecode (l: list bool) (dA: list bool -> (option A*list bool)) (dB: list bool -> (option B*list bool)) : (option A*option B*list bool) :=
@@ -16,6 +20,12 @@ Fixpoint crossDecode (l: list bool) (dA: list bool -> (option A*list bool)) (dB:
                end
   end.
   
+(* We want to prove the correctness of the cross decoding function *) 
+Lemma decode_composition : forall (l: list bool) (a: option A) (b: option B) (dA: list bool -> (option A*list bool)) (dB: list bool -> (option B*list bool)),
+  crossDecode l dA dB = (fst (dA l), fst (dB (snd (dA l))), snd (dB (snd (dA l)))).
+Proof.
+  Admitted.
+
 (* Decoding function using 2 given codecs *)
 Fixpoint sumDecode (l: list bool) (dA: list bool -> (option A*list bool)) (dB: list bool -> (option B*list bool)) : ((option A + option B)*list bool) :=
   match dA l with
@@ -24,21 +34,9 @@ Fixpoint sumDecode (l: list bool) (dA: list bool -> (option A*list bool)) (dB: l
              end
   | (a, l') => ((inl a),l')
   end.
-
-(* Returns the decoded result from a decoding function. Is it useful ? *)
-Fixpoint getResultDecode (l: list bool) (decode: list bool -> (A*list bool)) : A :=
-  match decode l with
-  | (a, l') => a
-  end.
-
-(* Returns the remainding list from a decoding function. Is it useful ?  *)
-Fixpoint getRemListDecode (l: list bool) (decode: list bool -> (A*list bool)) : list bool :=
-  match decode l with
-  | (a, l') => l'
-  end.
-
-(* We want to prove the correctness of the decoding function *) 
-Lemma decode_composition : forall (l l' l'': list bool) (a: A) (b: B) (dA: list bool -> (A*list bool)) (dB: list (* bool -> (B*list bool)),
-  crossDecode l dA dB = (a, b, l'') -> dA l = (a, l') /\ dB l' = (b, l'').
-Proof. *)
   
+(* We want to prove the correctness of the sum decoding function *) 
+Lemma sum_decode_composition : forall (l: list bool) (a: option A) (b: option B) (dA: list bool -> (option A*list bool)) (dB: list bool -> (option B*list bool)),
+  fst (dA l) = None -> sumDecode l dA dB = (inr (fst (dB l)), snd (dB l)).
+Proof.
+  Admitted.
