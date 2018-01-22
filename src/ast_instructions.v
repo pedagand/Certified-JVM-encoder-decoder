@@ -18,18 +18,18 @@ Inductive operande :=
 | reg_o : register -> operande.
 
 
-Inductive instruction {T : Type} :=
-| cinstr : T -> list op_type -> instruction.
+Inductive instr_sig {T : Type} :=
+| cinstr_s : T -> list op_type -> instr_sig.
 (* pour tester : créer l'ensemble des tags ici *)
 
 (* thoses are the type and lemmas that have to be implemented by the user *)
-
+(*
 Variable tag : Type.
 Variable beq_T : tag -> tag -> bool.
 Variable beq_T_refl : forall (t : tag), beq_T t t = true.
 Variable beq_T_rev : forall (t1 t2 : tag), beq_T t1 t2 = true <-> t1 = t2.
+*)
 
-(*
 (* need an implementation to compile *)
 Inductive tag :=
 | bidon1 : tag
@@ -59,17 +59,17 @@ Proof.
   intros. case t1; case t2; split; try auto; try discriminate.
 Qed.
 (* end of dummy implementation *)
-*)
+
 Scheme Equality for list.
 
-Definition instruction_beq (T : Type) (i1 i2 : instruction) :=
+Definition instr_sig_beq (T : Type) (i1 i2 : instr_sig) :=
   match i1,i2 with
-  | cinstr t1 tot1,cinstr t2 tot2 => andb (beq_T t1 t2)  (list_beq op_type op_type_beq tot1 tot2) 
+  | cinstr_s t1 tot1,cinstr_s t2 tot2 => andb (beq_T t1 t2)  (list_beq op_type op_type_beq tot1 tot2) 
   end.
 
 Search (andb _ _ = true).
 
-Print instruction_beq.
+Print instr_sig_beq.
 Lemma op_type_beq_reflexivity: forall (o: op_type), op_type_beq o o = true.
 Proof.
   destruct o; auto.
@@ -97,7 +97,7 @@ Proof.
       * intro. simpl in H. apply IHt1 in H. subst. reflexivity.
 Qed.
 
-Lemma instruction_beq_reflexivity : forall (t : instruction), instruction_beq tag t t = true.
+Lemma instr_sig_beq_reflexivity : forall (t : instr_sig), instr_sig_beq tag t t = true.
 Proof.
   intro t.
   destruct t. simpl. rewrite list_op_type_beq_reflexivity. rewrite beq_T_refl.
@@ -105,14 +105,17 @@ Proof.
 Qed.
   
 (*=tag_beq_different *)  
-Lemma instruction_beq_different : forall (t1 t2 : instruction),
-    instruction_beq tag t1 t2 = true -> t1=t2.
+Lemma instr_sig_beq_different : forall (t1 t2 : instr_sig),
+    instr_sig_beq tag t1 t2 = true -> t1=t2.
 Proof.
   intros. destruct t1. destruct t2. simpl in H. rewrite Bool.andb_true_iff in H. destruct H. apply list_op_types_beq_rev in H0.
   rewrite H0. apply beq_T_rev in H.
   rewrite H. auto.
 Qed.
-  
+
+Inductive instruction :=
+  | cinstr : @instr_sig tag -> list operande -> instruction.
+
 (*=binary_instruction  *)
 Definition binary_instruction := list bool.
 (*=End *)

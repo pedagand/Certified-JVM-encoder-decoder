@@ -253,6 +253,34 @@ Notation "'let!' x ':=' ma 'in' k" := (bind ma (fun x => k)) (at level 30).
 (* TODO :: here i know that i can always get a binary_instruction but some function don't allow me to  *)
 (* return a binary_instruction without encapsulate it into an option type *)
 
+Fixpoint encode_o (lt : list op_type) (lo : list operande) : option (list bool) :=
+  match lt,lo with
+  | [], [] => Some []
+  | t :: ty, o :: to =>
+    match t, o with
+    | imm_t, imm_o (imm v) =>  let! bits := encode_o ty to in
+                         let! oi  := n_bit 8 v in
+                         let! r := Some(oi ++ bits) in
+                         ret r 
+    | reg_t, reg_o (reg v) =>  let! bits := encode_o ty to in
+                         let! oi := n_bit 8 v in
+                         let! r := Some(oi ++ bits) in
+                         ret r
+    | _, _ => None
+    end
+  | _, _ => None
+  end.
+
+Fixpoint encode_t (ins : instruction) : option binary_instruction :=
+  match ins with
+  | cinstr (cinstr_s t lt) l =>
+    let! k := lookup t encdec in
+    let! code := n_bit 8 k in
+    let! ops := encode_o lt l in
+    ret (code ++ ops)
+  end.
+
+(*
 (* theese are the encode functions for the different type of instruction *)
 (*=encode_t_n *)
 Definition encode_t_n (i : instruction_tern_n) : option binary_instruction :=
@@ -262,6 +290,7 @@ Definition encode_t_n (i : instruction_tern_n) : option binary_instruction :=
   let! o2 := operand_to_bin (reg_o i.(instr_operande2_t_n)) in
   let! o3 := operand_to_bin (reg_o i.(instr_operande3_t_n)) in
   ret (code ++ o1 ++ o2 ++ o3).
+
 (*=End *)
 Definition encode_t_i (i : instruction_tern_i) : option binary_instruction :=
   let! k := lookup (tag_t_i (i.(instr_opcode_t_i))) encdec in
@@ -366,7 +395,7 @@ Definition encode (i : instruction) : option binary_instruction :=
 (*=End *)  
 
 
-  
+*)
 
 (* this is the decode function (with this one we only need one general function) *)
 (*=decode *)
