@@ -23,13 +23,13 @@ Inductive instruction {T : Type} :=
 (* pour tester : créer l'ensemble des tags ici *)
 
 (* thoses are the type and lemmas that have to be implemented by the user *)
-(*
+
 Variable tag : Type.
 Variable beq_T : tag -> tag -> bool.
 Variable beq_T_refl : forall (t : tag), beq_T t t = true.
 Variable beq_T_rev : forall (t1 t2 : tag), beq_T t1 t2 = true <-> t1 = t2.
- *)
 
+(*
 (* need an implementation to compile *)
 Inductive tag :=
 | bidon1 : tag
@@ -59,7 +59,7 @@ Proof.
   intros. case t1; case t2; split; try auto; try discriminate.
 Qed.
 (* end of dummy implementation *)
-
+*)
 Scheme Equality for list.
 
 Definition instruction_beq (T : Type) (i1 i2 : instruction) :=
