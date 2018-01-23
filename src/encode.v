@@ -399,6 +399,37 @@ Definition encode (i : instruction) : option binary_instruction :=
 
 (* this is the decode function (with this one we only need one general function) *)
 (*=decode *)
+(* FIXME : maybe need to type encode and decode by (M (list operande)) * binary_instruction*)
+Fixpoint decode_sig (lt : list op_type) (bi : binary_instruction) : M (list operande * binary_instruction) :=
+  match lt, get_first_n_bit bi 8 with
+  | imm_t::tl, (li, next) =>
+    let! tu_rest := decode_sig tl next in
+    match tu_rest with
+      (lr, er) => ret ( imm_o (imm (bit_n li)) :: lr, er)
+    end
+  | reg_t::tl, (li, next) =>
+    let! tu_rest := decode_sig tl next in
+    match tu_rest with
+      (lr, er) => ret ( reg_o (reg (bit_n li)) :: lr, er)
+    end
+  | [], _ => ret ( [], bi )
+  end
+  .
+
+Definition decode (bi : binary_instruction) : M (instruction * binary_instruction) :=
+  match get_first_n_bit bi 8 with
+  | (li,next) => let! t := lookdown (bit_n li) encdec in
+                 match t with
+                 | tg =>
+                   let! lo := lookup_sig tg sig_dico in
+                   let! tup := decode_sig lo next in
+                   match tup with
+                   | (li, ed) => ret ((cinstr (cinstr_s t lo) li ) , ed)
+                   end
+                 end
+  end
+.
+(*  
 Definition decode (bi : binary_instruction) : option instruction :=
   if length bi =? 32
   then
@@ -546,7 +577,7 @@ Definition decode (bi : binary_instruction) : option instruction :=
                           end
   end
   else None.
-                            
+*)                          
 
 
 
@@ -616,6 +647,10 @@ Fixpoint traverse {A} (l : list (option A)) : option (list A) :=
 (*=End *)
 (* encode_flux definitions *)
 (*=encode_flux *)
+
+(* TODO NEED TO FINISHI FLUX *)
+
+(*
 Definition encode_flux_opt
    (li : list instruction) : list (option binary_instruction) :=
   map encode li.
@@ -664,6 +699,6 @@ Definition my_instr_list_encoded_decoded := match encode_flux_b my_instr_liste w
 Compute my_instr_list_encoded_decoded.
 (* it seem's to work *)
 
-
+*)
 
 

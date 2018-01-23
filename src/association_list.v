@@ -16,6 +16,23 @@ Definition assoc : Type :=
 Definition tag_opcode_assoc :=
   list assoc.
 (*=End *)
+
+Definition assoc_sig : Type :=
+  tag * list op_type.
+
+Definition tag_sig_assoc :=
+  list assoc_sig.
+
+Fixpoint lookup_sig (t : tag) (l : tag_sig_assoc) : option (list op_type) :=
+  match l with
+    | [] => None
+    | (t',n) :: tl => if beq_T t t'
+                      then Some n
+                      else lookup_sig t tl
+  end.
+
+Definition sig_dico := [(bidon1, [imm_t; reg_t]); (bidon2, [reg_t; reg_t])].
+
 Scheme Equality for list.
 Check list_beq.
 
