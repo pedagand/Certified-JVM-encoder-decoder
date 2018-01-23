@@ -1,22 +1,23 @@
 Require Import Bool List Arith Nat.
 Import ListNotations.
 Require Import Mmx.ast_instructions Mmx.binary Mmx.association_list Mmx.encode.
+Require Import Coq.Logic.FunctionalExtensionality.
+
+Lemma list_nil_length {T : Type} : forall (l : list T), length l = 0 -> l = nil.
+  Admitted.
 
 (*=encode_decode_t_n *)
-Lemma encode_decode_t_n : forall (i : instruction_tern_n)
+Lemma encode_decode : forall (i : instruction)
                                  (bi : binary_instruction),
-    encode_t_n i = Some bi -> decode bi = Some (instr_t_n i).
+    encode i = Some bi -> decode bi = Some (i).
 (*=End *)
 Proof.
   (* first part trying to get lot of information from encode_t_n *)
   intros.
-  unfold encode_t_n in H.
-  apply bind_rewrite in H.
-  destruct H.
-  destruct H.
-  apply bind_rewrite in H.
-  destruct H.
-  destruct H.
+  unfold encode in H.
+  repeat destruct i.
+  Check bind_rewrite.
+  
   apply bind_rewrite in H.
   destruct H.
   destruct H.
@@ -29,17 +30,39 @@ Proof.
   unfold decode.
   rewrite ret_rewrite in H.
   inversion H.
-  (* now going to go further into decode *)
+  subst.
   assert (length x0 = 8) by (apply commut_equal in H1; apply size_n_bit in H1; auto).
-  assert (get_first_n_bit (x0 ++ x1 ++ x2 ++ x3) 8 = (x0,x1 ++ x2 ++ x3)) by (apply get_first_n_bit_size_4; auto).  
-  rewrite H7.
+  assert (get_first_n_bit (x0 ++ x1) 8 = (x0, x1)).
+  { apply get_first_n_bit_size_2. auto. }
+  rewrite H4.
   apply commut_equal in H0.
-  Check lookup_lookdown.
   apply lookup_lookdown in H0.
   apply commut_equal in H1.
-  assert (bit_n x0 = x) by (apply n_bit_n in H1; exact H1).
-  rewrite H8.
+  assert (bit_n x0 = x).
+  { apply n_bit_n in H1. exact H1. }
+  rewrite H5.
   rewrite H0.
+  assert (forall (f : tag -> (option instruction)), bind (Some (t)) f = f (t) ) by reflexivity.
+  rewrite H6.
+  assert (lookup_sig t sig_dico = Some l0) by admit.
+  rewrite H7.
+  assert (forall (f : list op_type -> (M instruction)), bind (Some (l0)) f = f (l0) ) by reflexivity.
+  rewrite H8.
+  unfold decode_sig.
+  induction l0.
+  - simpl. rewrite ret_rewrite.
+    assert (l = @nil operande).
+    {   apply commut_equal in H2.
+        rewrite <- encode_size_eq in H2.
+        simpl in H2.
+        apply commut_equal in H2.
+        apply list_nil_length in H2.
+        assumption.
+    }
+    rewrite H9.
+    reflexivity.
+  - Admitted.
+ (* 
   assert (forall (f : tag -> (option instruction)), bind (Some (tag_t_n (instr_opcode_t_n i))) f = f (tag_t_n (instr_opcode_t_n i))) by reflexivity.
   rewrite H9.
   assert (length x1 = 8) by (apply commut_equal in H2; apply operand_to_bin_size in H2; auto).
@@ -77,7 +100,7 @@ Proof.
   rewrite H12.
   rewrite H14.
   simpl.  
-  reflexivity.
+  reflexivity.*)
 Qed.
 
 

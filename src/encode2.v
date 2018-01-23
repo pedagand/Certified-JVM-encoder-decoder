@@ -199,14 +199,6 @@ Proof.
 Qed.
 
 
-Lemma get_first_n_bit_size_2 : forall (n : nat) (l1 l2 : list bool),
-    length l1 = n -> get_first_n_bit (l1 ++ l2) n = (l1,l2).
-Proof.
-  intros.
-  specialize (get_first_n_bit_size_tl n l1 l2).
-  intros.
-  auto.
-Qed.
 
 
 
@@ -279,7 +271,7 @@ Fixpoint encode_o (lt : list op_type) (lo : list operande) : option (list bool) 
   | _, _ => None
   end.
 
-Fixpoint encode (ins : instruction) : option binary_instruction :=
+Fixpoint encode_t (ins : instruction) : option binary_instruction :=
   match ins with
   | cinstr (cinstr_s t lt) l =>
     let! k := lookup t encdec in
@@ -287,14 +279,6 @@ Fixpoint encode (ins : instruction) : option binary_instruction :=
     let! ops := encode_o lt l in
     ret (code ++ ops)
   end.
-
-Lemma encode_size_neq : forall (lt : list op_type) (lo : list operande),
-    length lt <> length lo <-> encode_o lt lo = None.
-Admitted.
-Lemma encode_size_eq : forall (lt : list op_type) (lo : list operande) (t: list bool),
-    length lt = length lo <-> encode_o lt lo = Some t.
-Admitted.
-  
 
 (*
 (* theese are the encode functions for the different type of instruction *)
@@ -416,26 +400,30 @@ Definition encode (i : instruction) : option binary_instruction :=
 (* this is the decode function (with this one we only need one general function) *)
 (*=decode *)
 (* FIXME : maybe need to type encode and decode by (M (list operande)) * binary_instruction*)
-Fixpoint decode_sig (lt : list op_type) (bi : binary_instruction) : M (list operande) :=
+Fixpoint decode_sig (lt : list op_type) (bi : binary_instruction) : M (list operande * binary_instruction) :=
   match lt, get_first_n_bit bi 8 with
   | imm_t::tl, (li, next) =>
-    let! lr := decode_sig tl next in
-    ret ( imm_o (imm (bit_n li)) :: lr)
+    let! tu_rest := decode_sig tl next in
+    let '(lr, er) := tu_rest in
+    ret ( imm_o (imm (bit_n li)) :: lr, er)
   | reg_t::tl, (li, next) =>
-    let! lr := decode_sig tl next in
-    ret ( reg_o (reg (bit_n li)) :: lr)
-  | [], _ => ret ( [] )
+    let! tu_rest := decode_sig tl next in
+    let '(lr, er) := tu_rest in
+    ret ( reg_o (reg (bit_n li)) :: lr, er)
+  | [], _ => ret ( [], bi )
   end
   .
 
-Definition decode (bi : binary_instruction) : M (instruction) :=
+Definition decode (bi : binary_instruction) : M (instruction * binary_instruction) :=
   match get_first_n_bit bi 8 with
   | (li,next) => let! t := lookdown (bit_n li) encdec in
                  match t with
                  | tg =>
                    let! lo := lookup_sig tg sig_dico in
-                   let! li := decode_sig lo next in
-                   ret (cinstr (cinstr_s t lo) li ) 
+                   let! tup := decode_sig lo next in
+                   match tup with
+                   | (li, ed) => ret ((cinstr (cinstr_s t lo) li ) , ed)
+                   end
                  end
   end
 .
@@ -659,7 +647,7 @@ Fixpoint traverse {A} (l : list (option A)) : option (list A) :=
 (*=encode_flux *)
 
 (* TODO NEED TO FINISH FLUX *)
-(*
+
 
 Definition encode_flux_opt
    (li : list instruction) : list (option binary_instruction) :=
@@ -709,8 +697,6 @@ Definition my_instr_list_encoded_decoded := match encode_flux_b my_instr_liste w
 Compute my_instr_list_encoded_decoded.
 (* it seem's to work *)
 
-
-
-
-
 *)
+
+

@@ -2,13 +2,12 @@ Require Import List Nat Arith String.
 Import ListNotations.
 Require Import Mmx.ast_instructions.
 
-(*Section assoc.*)
-(*
+Section assoc.
 Variable tag : Type.
 Variable beq_T : tag -> tag -> bool.
 Variable beq_T_refl : forall (t : tag), beq_T t t = true.
 Variable beq_T_rev : forall (t1 t2 : tag), beq_T t1 t2 = true <-> t1 = t2.
-*)
+
 (*=assoc *)
 Definition assoc : Type :=
   tag * nat.
@@ -18,10 +17,6 @@ Definition tag_opcode_assoc :=
   list assoc.
 (*=End *)
 
-(* this code can be replaced by :
-Variable lookup_sig (t: tag) : list op_type.
-
-Fonction totale fournie par l'utilisateur *)
 Definition assoc_sig : Type :=
   tag * list op_type.
 
@@ -65,8 +60,8 @@ Fixpoint lookdown (n : nat) (l : tag_opcode_assoc) : option tag :=
 
 (* this table is an association list of type tag_opcode_assoc with every associations that can be made in our langage *)
 (*=encdec *)
-Definition encdec := [(bidon1, 0); (bidon2, 1)]. (*tag_opcode_assoc.*)
-(*Variable encdec : tag_opcode_assoc.*)
+(*Definition encdec := [(bidon1, 0); (bidon2, 1)]. (*tag_opcode_assoc.*)*)
+Variable encdec : tag_opcode_assoc.
 Variable forall_tag : (tag -> bool) -> bool.
 Variable forall_tag_spec1 : forall (f : tag -> bool), (forall (t: tag), f t = true) -> forall_tag f = true.
 Variable forall_tag_spec2 : forall (f : tag -> bool), forall_tag f = true -> (forall (t: tag), f t = true).
@@ -499,4 +494,4 @@ Proof.
 Qed.
 (*=End *)
 
-(*End assoc.*)
+End assoc.
